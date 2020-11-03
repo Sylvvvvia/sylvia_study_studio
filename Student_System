@@ -1,0 +1,637 @@
+/**************************
+** 文件名: Student_Score_System
+** 创建人: 刘思媛
+** 日 期:  2020.11.3
+** 版 本:  3.0
+**-----------------------
+*************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define N 30
+#define M 80
+#define COURSE 6
+
+
+/**函数功能：打印菜单*/
+void Printing_Menu (void)
+{
+    printf("\n[MENU]\n");
+    printf("1. Input record \n");
+    printf("2. List record \n");
+    printf("3. Calculate total and average score of every course\n");
+    printf("4. Calculate total and average score of every student\n");
+    printf("5. Sort in descending order by total score of every student\n");
+    printf("6. Sort in ascending order by total score of every student\n");
+    printf("7. Sort in ascending order by StudentID\n");
+    printf("8. Sort in dictionary order by name \n");
+    printf("9. Search by StudentID \n");
+    printf("10.Search by name\n");
+    printf("11.Statistic analysis for every course\n");
+    printf("0. Exit \n");
+    printf("\n");
+    return;
+}
+
+/**函数功能：打印分隔符*/
+void Interval()
+{
+    printf("\n-------------------------------------\n");
+}
+
+/**函数功能：交换某个数组的某一行元素*/
+void Swap(int *a,int *b)
+{
+    int temp;
+    temp=*a;
+    *a=*b;
+    *b=temp;
+    return;
+
+}
+
+/**函数功能：计算分数的排名
+   输入值a：要计算排名的某个分数
+   输出值i+1：该分数所处排名*/
+int Ranking(int score[][COURSE],int n,int m,int a)
+{
+    int i,j,temp;
+    int sum[N]= {0},copy_sum[N];                    ///copy_sum用于存储原始排序的总分
+    for(i=0; i<n; i++)
+    {
+        for(j=0; j<m; j++)
+        {
+            sum[i]+=score[i][j];                    ///计算每个学生的总分
+        }
+    }
+    memcpy(copy_sum,sum,sizeof(int)*n);             ///复制sum到copy_sum
+    for(i=0; i<n-1; i++)                            ///冒泡排序
+    {
+        for(j=i+1; j<n; j++)
+        {
+            if(sum[j]>sum[i])
+            {
+                temp=sum[i];
+                sum[i]=sum[j];
+                sum[j]=temp;
+            }
+        }
+    }
+    for(i=0; i<n; i++)
+    {
+        if(a==copy_sum[i])                          ///如果在原始排序的sum中找查到与a相等的分数
+            return i+1;                             ///输出名次
+    }
+}
+
+
+
+/**函数功能：读入学生成绩*/
+int Input_Record(long student_id[], int score[][COURSE], char name[N][M],int *m)
+{
+    int i,j,n;         ///n:学生人数,m:课程数
+    //录入n
+    printf("Please input the number of the students(number<=30)\n");
+    while((!scanf("%d",&n))||(n<1)||(n>30))                         /**防止错误输入：如果输入非法字符，或者数量
+                                                                     不在1~30之间，系统要求用户重新输入*/
+    {
+        while(getchar()!='\n');                                     /**清除缓冲区*/
+        printf("Error! Please input the corret number.\n");         /**提示输入错误*/
+    }
+    //录入m
+    printf("\nPlease input the number of the courses(number<=6)\n");
+    while((!scanf("%d",m))||(*m<1)||(*m>6))                        ///防止错误输入：如果输入非法字符，或者数量
+        ///不在1~6之间，系统要求用户重新输入
+    {
+        while(getchar()!='\n');                                     /**清除缓冲区*/
+        printf("Error! Please input the corret number.\n");         /**提示输入错误*/
+    }
+    printf("\n\nPlease input the student ID, name and the score of each course.\n\n");
+    //录入学生信息
+    for(i=0; i<n; i++)
+    {
+        //录入学生学号
+        printf("\nStudent_%d:\n",i+1);
+        printf("\nStuent ID:  ");
+        while(!scanf("%ld",&student_id[i]))
+        {
+            while(getchar()!='\n');                                        /**清除缓冲区*/
+            printf("Error! Please input the corret student ID.\n");         /**提示输入错误*/
+        }
+        //录入学生姓名
+        printf("Name:  ");
+        scanf("%s",name[i]);
+        //录入学生各科的成绩
+        for(j=0; j<*m; j++)
+        {
+            printf("Course_%d:  ",j+1);
+            while((!scanf("%d",&score[i][j]))||(score[i][j]<0)||(score[i][j]>100))
+            {
+                while(getchar()!='\n');                                                     /**清除缓冲区*/
+                printf("\nError! Please input the corret score of course_%d.\n",j+1);         /**提示输入错误*/
+            }
+        }
+        printf("\n***Student_%d is collected.\n\n",i+1);
+
+    }
+    printf("\nInputing completed.\n");
+    return n;
+}
+
+/**函数功能：打印数组*/
+void List_Record (long student_id[], int score[][COURSE],int n,int m,char name[N][M])
+{
+    int i,j;
+    //打印输出界面
+    printf("ID           Name         ");
+    for(i=1; i<=m; i++)
+    {
+        printf("Course_%d     ",i);
+    }
+    printf("\n");
+    //打印
+    for(i=0; i<n; i++)                                              /**for循环遍历数组，依次打印*/
+    {
+        printf("%-12ld %-12s ",student_id[i],name[i]);
+        for(j=0; j<m; j++)
+        {
+            printf("%-12d ",score[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\nPrinting completed.\n");
+    return;
+}
+
+
+/**函数功能：计算总分和平均分*/
+void Calculate (long student_id[], int score[][COURSE],int n,int m,char name[N][M])
+{
+    double sum=0,average=0;
+    int i,j;
+    //打印输出界面
+    printf("ID           Name         ");
+    for(i=1; i<=m; i++)
+    {
+        printf("course_%d     ",i);
+    }
+    printf("Sum          Average      ");
+    printf("\n\n");
+    //打印
+    for(i=0; i<n; i++)                                          /**for循环遍历数组，依次打印*/
+    {
+        printf("%-12ld %-12s ",student_id[i],name[i]);
+        //计算每个学生的总分
+        for(j=0; j<m; j++)
+        {
+            printf("%-12d ",score[i][j]);
+            sum+=score[i][j];
+        }
+        //计算平均分
+        average=sum/n;
+        printf("%-12d %.2lf \n\n",(int)sum,average);
+        sum=0;                                                  ///把sum重新赋值为0，用于下一个循环的计算
+    }
+    printf("\nPrinting completed.\n");
+    return;
+}
+
+/**函数功能：计算每门课程/学生的总分和平均分*/
+void Sum_Average(int score[][COURSE],char name[N][M],int n,int m,int choice)
+{
+    double sum=0,average;
+    int i,j;
+    switch(choice)                      ///用于区分功能3和功能4，分别计算课程和学生的信息
+    {
+    case 3:                             ///功能3
+        for(i=0; i<m; i++)
+        {
+            //计算某个学生的总分
+            for(j=0; j<n; j++)
+            {
+                sum+=score[j][i];
+            }
+            //计算平均分
+            average=sum/m;
+            printf("Course_%d\nTotal scores:  %8d    Average scores:  %.2lf\n\n",i+1,(int)sum,average);
+            sum=0;
+        }
+        break;
+    case 4:                             ///功能4
+        for(i=0; i<n; i++)
+        {
+            //计算某个学生的总分
+            for(j=0; j<m; j++)
+            {
+                sum+=score[i][j];
+            }
+            //计算平均分
+            average=sum/m;
+            printf("  %8s\nTotal scores:  %8d    Average scores:  %.2lf\n\n",name[i],(int)sum,average);
+            sum=0;
+        }
+        break;
+    }
+
+}
+
+/**函数功能：指针指向这个函数，提供升序的条件*/
+int Ascending (int a,int b)
+{
+    return a<b;
+}
+
+/**函数功能：指针指向这个函数，提供降序的条件*/
+int Descending (int a,int b)
+{
+    return a>b;
+}
+
+/**函数功能：将总分按升序或者降序排列
+通过函数指针选择升序或者降序*/
+void Selection_Sort (long student_id[], int score[][COURSE],int n, int m,char name[N][M],int (*compare)(int a,int b))
+{
+    int i,j;
+    int sum[N];                              ///定义一个存储总分的数组
+    int temp_sum=0;                            /**temp_sum用于交换*/
+    long temp_id=0;
+    char temp_name[M];
+    //归零sum数组
+    for(i=0;i<n;i++){
+        sum[i]=0;
+    }
+    //计算总分
+    for(i=0; i<n; i++)
+    {
+        for(j=0; j<m; j++)
+        {
+            sum[i]+=score[i][j];
+        }
+    }
+    for(i=0; i<n-1; i++)                        /**开始对sum数组进行排序*/
+    {
+        for(j=i+1; j<n; j++)
+        {
+            if((*compare)(sum[j],sum[i])){     /**指针函数*compare可以根据需要升序或降序*/
+                //分别交换sum，score，id的位置
+            temp_sum=sum[i];
+            sum[i]=sum[j];
+            sum[j]=temp_sum;
+            temp_id=student_id[i];
+            student_id[i]=student_id[j];
+            student_id[j]=temp_id;
+            strcpy(temp_name,name[i]);
+            strcpy(name[i],name[j]);
+            strcpy(name[j],temp_name);
+        }
+    }
+    }
+
+//打印排名表
+    printf("Ranking List:\n\n");
+    printf("Name         Sum\n");
+    for(i=0; i<n; i++)
+    {
+        printf("%-12s %-12d\n",name[i],sum[i]);
+    }
+    printf("\nPrinting completed.\n");
+    return;
+}
+
+
+/**函数功能：按照学号从低到高排序*/
+void Ordering_id (long student_id[], int score[][COURSE],int n,int m,char name[N][M])
+{
+    int i,j,k,x;
+    long temp_id=0;                             /**temp_id用于交换*/
+    char temp_name[M];                       /**temp_name用于交换*/
+    for(i=0; i<n-1; i++)                        ///对student_id进行冒泡排序
+    {
+        //k=i;
+        for(j=i; j<n; j++)
+        {
+            if(student_id[j]<student_id[i]){
+                //分别交换score，name，id
+                for(x=0;x<m;x++){
+                    Swap(&score[i][x],&score[j][x]);
+                }
+                temp_id=student_id[i];
+                student_id[i]=student_id[j];
+                student_id[j]=temp_id;
+                strcpy(temp_name,name[i]);
+                strcpy(name[i],name[j]);
+                strcpy(name[j],temp_name);}
+            }
+        }
+        return;
+    }
+
+
+
+/**函数功能：按姓名的字典顺序排序*/
+void Name_Sorting(char name[N][M],int score[][COURSE],long student_id[],int n,int m)
+{
+    int i,j,x;
+    char temp[M];
+    long temp_id=0;
+    for(i=0; i<n-1; i++)                        ///对name进行排序
+    {
+        for(j=i+1; j<n; j++)
+        {
+            if(strcmp(name[j],name[i])<0)
+            {
+                //分别交换name，score，id
+                strcpy(temp,name[i]);
+                strcpy(name[i],name[j]);
+                strcpy(name[j],temp);
+                for(x=0;x<m;x++){
+                    Swap(&score[i][x],&score[j][x]);
+                }
+                temp_id=student_id[i];
+                student_id[i]=student_id[j];
+                student_id[j]=temp_id;
+            }
+        }
+    }
+    //打印
+    List_Record(student_id,score,n,m,name);
+    return;
+}
+
+
+
+/**函数功能：利用二分法搜索学号，查询排名及各科成绩*/
+void Search_ID (long student_id[],int score[][COURSE],int n,int m,char name[N][M])
+{
+    int low=0,high=n-1,mid,rank,sum=0;               ///low代表最左方的下角标，high是最右方
+    int target=0,i;                                 ///target=0表示没找到，target=1表示找到了
+    long number;
+    printf("Please input the student id number:\n");
+    while(!scanf("%ld",&number))                    ///防止错误输入
+    {
+        while(getchar()!='\n');
+        printf("Error! Please input the corret number:\n");
+    }
+    Ordering_id(student_id,score,n,m,name);         ///先把id升序排列
+    while(low<=high)                                ///当左角标始终小于右角标时继续循环
+    {
+        mid=(high+low)/2;                           ///取中间角标mid
+        if(number>student_id[mid])
+        {
+            low=mid+1;                              ///右分
+        }
+        else if(number<student_id[mid])
+        {
+            high=mid-1;                             ///左分
+        }
+        else if(number==student_id[mid])
+        {
+            target=1;                               ///target=1表示找到了
+            break;                                  ///那么就跳出循环
+        }
+    }
+    if(target!=1)                                   ///如果没找到，系统提示用户没有找到所输入的学号
+    {
+        printf("Can not find the number: %ld.\n",number);
+
+    }
+    else                                            ///当找查到所输入的学号
+    {
+        //计算总分
+        for(i=0; i<m; i++)
+        {
+            sum+=score[mid][i];
+        }
+        rank=Ranking(score,n,m,sum);                 ///用ranking函数计算排名
+        printf("ID           Name         ");        ///打印输出界面
+        for(i=0; i<m; i++)
+        {
+            printf("Course_%d     ",i+1);
+        }
+        printf("\n%-12ld %-12s ",student_id[mid],name[mid]);
+        for(i=0; i<m; i++)
+        {
+            printf("%-12d ",score[mid][i]);
+        }
+        printf("\n\n**Ranking:   %d\n\n",rank);
+        printf("\nSearching completed.\n");
+    }
+    return;
+
+}
+
+/**函数功能：按照姓名索引，查询排名及各科成绩*/
+void Search_Name(char name[N][M], int score[][COURSE],int n,int m)
+{
+    char target_name[M];
+    int i,j=0,k,rank,sum=0;                                   /**j=1表示找到，j=0表示没找到*/
+    printf("Please input the student's name:\n");
+    while(!scanf("%s",target_name))                           /**防止非法输入*/
+    {
+        while(getchar()!='\n');
+        printf("Error! Please input the corret name:\n");
+    }
+    for(i=0; i<n; i++)
+    {
+        if(strcmp(target_name,name[i])==0)                   /**如果找到这个学号*/
+        {
+            j=1;
+            break;
+        }
+    }
+    if(j==1)
+    {
+        for(k=0; k<m; k++)
+        {
+            sum+=score[i][k];
+        }
+        rank=Ranking(score,n,m,sum);                         ///用ranking函数计算排名
+        printf("Name         ");                             ///打印输出界面
+        for(k=0; k<m; k++)
+        {
+            printf("Course_%d     ",k+1);
+        }
+        printf("\n%-12s ",name[i]);
+        for(k=0; k<m; k++)
+        {
+            printf("%-12d ",score[i][k]);
+        }
+        printf("\n\n**Ranking:   %d\n\n",rank);
+        printf("\nSearching completed.\n");
+    }
+    else                                                     /**如果没有找到，系统提示用户*/
+    {
+        printf("Can not find the student: %s.\n",target_name);
+    }
+    return;
+
+}
+
+/**函数功能：成绩分析*/
+void Static_Analysis (long student_id[], int score[][COURSE],int n,int m)
+{
+    int nice=0,good=0,middle=0,pass=0,fail=0,i,j;
+    for(i=0; i<m; i++)                              ///课程的循环
+    {
+        for(j=0; j<n; j++)                          ///所有学生的循环
+        {
+            if(score[i][j]>=90)
+                nice++;                             /**优*/
+            if((score[i][j]>=80)&&(score[i][j]<=89))
+                good++;                             /**良*/
+            if((score[i][j]>=70)&&(score[i][j]<=79))
+                middle++;                            /**中*/
+            if((score[i][j]>=60)&&(score[i][j]<=69))
+                pass++;                             /**及格*/
+            if(score[i][j]<=59)
+                fail++;                             /**不及格*/
+        }
+        printf("Analysis result of Course_%d:\n\n",i+1);
+        printf("Score    Number of student Proportion\n\n");
+        printf("(90-100) %-17d , %-.2f%%\n",nice,nice*100.0/n);      /**输出各个分数段的人数和比例*/
+        printf("(80-89)  %-17d , %-.2f%%\n",good,good*100.0/n);
+        printf("(70-79)  %-17d , %-.2f%%\n",middle,middle*100.0/n);
+        printf("(60-69)  %-17d , %-.2f%%\n",pass,pass*100.0/n);
+        printf("(0 -59)  %-17d , %-.2f%%\n\n\n",fail,fail*100.0/n);
+        nice=0;
+        good=0;
+        middle=0;
+        pass=0;
+        fail=0;
+    }
+    printf("Printing completed.\n");
+    return;
+}
+
+/**函数功能：将数组备份至sort数组中从而保留原始排序，用于功能2的输出*/
+void Copying (long student_id[], int score[][COURSE],char name[N][M],long sort_id[], int sort_score[][COURSE],char sort_name[N][M],int n,int m)
+{
+    int i,j;
+    //备份score
+    for(i=0; i<n; i++)
+    {
+        for(j=0; j<m; j++)
+        {
+            sort_score[i][j]=score[i][j];
+        }
+    }
+    //备份id
+    for(i=0; i<n; i++)
+    {
+        sort_id[i]=student_id[i];
+    }
+    //备份name
+    for(i=0; i<n; i++)
+    {
+        strcpy(sort_name[i],name[i]);
+    }
+    return;
+}
+
+/**函数功能：打印作业的开头信息*/
+void Printing_Title(void)
+{
+    printf("Number:200110728\nsubject No.1 - project No.1\n\n");
+    printf("[Student Score System] V3.0\n\n");
+}
+
+int main(void)
+{
+    Printing_Title();
+    char name[N][M],sort_name[N][M];
+    long student_id[N],sort_id[N];
+    int score[N][COURSE],sort_score[N][COURSE];
+    int n,m,flag=0;                                /**flag=0表示没有输入，flag=1表示已经输入，可以防止
+                                                        用户未进行输入就开始其他功能*/
+    int choice=1;
+    while(choice!=0)                                /**当用户不选择退出0，就一直进入主菜单页面*/
+    {
+        Printing_Menu();
+        printf("Please enter your choice: ");
+
+        while((!scanf("%d",&choice))||(choice<0)||(choice>11))           /**防止非法输入*/
+        {
+            while(getchar()!='\n');
+            printf("Error! Please input the corret menu number.\n");
+        }
+        if(choice==0)                                /**输入0时退出*/
+        {
+            printf("exiting...\n");
+            break;
+        }
+        if(choice==1)
+            flag=1;
+        if(flag==0)                                  /**如果用户没有先进行功能1录入数据，就不能进行其他功能*/
+        {
+            printf("You should input first!\n");
+            Interval();
+            continue;
+        }
+        Interval();
+        switch(choice)                               /**各个选项的switch分支*/
+        {
+        case 1:
+            printf("**Input record.\n\n");
+            n=Input_Record (student_id,score,name,&m);        /**读入学生成绩*/
+            Copying(student_id,score,name,sort_id,sort_score,sort_name,n,m);   ///复制原始数据，保证功能2的正确性
+            Interval();
+            break;
+        case 2:
+            printf("**List record\n\n");
+            Calculate(sort_id,sort_score,n,m,sort_name);      /**打印原来的成绩*/
+            Interval();
+            break;
+        case 3:
+            printf("**Calculate total and average score of every course\n\n");
+            Sum_Average(score,name,n,m,choice);               ///计算每门课程的总分和平均分
+            Interval();
+            break;
+        case 4:
+            printf("**Calculate total and average score of every student\n\n");
+            Sum_Average(score,name,n,m,choice);               ///计算每个学生的总分和平均分
+            Interval();
+            break;
+        case 5:
+            printf("**Sort in descending order by total score of every student.\n\n");
+            Selection_Sort(student_id,score,n,m,name,Descending);  /**降序排序*/
+            Interval();
+            break;
+        case 6:
+            printf("**Sort in ascending order by total score of every student.\n\n");
+            Selection_Sort(student_id,score,n,m,name,Ascending);   /**升序排序*/
+            Interval();
+            break;
+        case 7:
+            printf("**Sort in ascending order by StudentID.\n\n");
+            Ordering_id (student_id,score,n,m,name);
+            List_Record(student_id,score,n,m,name);                /**按学号排序*/
+            Interval();
+            break;
+        case 8:
+            printf("**Sort in dictionary order by name.\n\n");
+            Name_Sorting(name,score,student_id,n,m);               ///按姓名的字典顺序排出成绩表
+            Interval();
+            break;
+        case 9:
+            printf("**Search by StudentID.\n\n");
+            Search_ID(student_id,score,n,m,name);                  /**按学号搜索*/
+            Interval();
+            break;
+        case 10:
+            printf("**Statistic analysis for every course.\n\n");
+            Search_Name(name,score,n,m);                           /**按姓名搜索*/
+            Interval();
+            break;
+        case 11:
+            printf("**Statistic analysis.\n\n");
+            Static_Analysis (student_id,score,n,m);                /**成绩分析*/
+            Interval();
+            break;
+        case 0:
+            printf("**Exiting...\n\n");                             /**退出程序*/
+            break;
+        }
+    }
+    return 0;
+}
